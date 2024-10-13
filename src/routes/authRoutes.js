@@ -1,9 +1,16 @@
 import express from 'express';
+import { User } from '../models/userModel.js';
 
 const router = express.Router();
 
-router.get('/register', (req, res) => {
-  res.status(200).json({ success: true, msg: "register route" });
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+  if ( !name || !email || !password ) {
+    return res.json({ msg: "enter all fields"});
+  }
+  await User.create({ name, email, password });
+  res.status(201).json({ success: true, msg: "new user created" });
 });
+
 
 export default router;
