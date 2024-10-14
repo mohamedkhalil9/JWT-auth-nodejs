@@ -16,9 +16,9 @@ const getUser = asyncWrapper(async (req, res) => {
 })
 const deleteUser = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  console.log(id);
-  await User.findByIdAndDelete(id);
-  res.status(204).json({ status: "success", data: null });
+  const user = await User.findByIdAndDelete(id);
+  if (!user) throw new appError(`there is no user with id ${id}`, 404);
+  res.status(200).json({ status: "success", data: null });
 })
 
 
