@@ -10,8 +10,7 @@ const verifyToken = (req, res, next) => {
     req.user = decodedPayload;
     next();
   } catch (error) {
-    const err = new AppError("invalid token", 401);
-    next(err);
+    return next(new AppError("invalid token", 401));
   }
 }
 
