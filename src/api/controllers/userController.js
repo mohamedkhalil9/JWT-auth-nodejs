@@ -2,9 +2,10 @@ import User from '../models/userModel.js';
 import asyncWrapper from '../middlewares/asyncWrapper.js';
 import appError from '../helpers/appError.js';
 
-const getAllUsers = asyncWrapper(async (req, res) => {
+const getUsers = asyncWrapper(async (req, res) => {
   const users = await User.find();
-  res.status(200).json({ status: "success", data: {users} });
+  const { user } = req;
+  res.status(200).json({ status: "success", test: user, data: {users} });
 })
 
 const getUser = asyncWrapper(async (req, res) => {
@@ -14,6 +15,7 @@ const getUser = asyncWrapper(async (req, res) => {
   if (!user) throw new appError("user not found", 404);
   res.status(200).json({ status: "success", data: {user} });
 })
+
 const deleteUser = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const user = await User.findByIdAndDelete(id);
@@ -21,5 +23,12 @@ const deleteUser = asyncWrapper(async (req, res) => {
   res.status(200).json({ status: "success", data: null });
 })
 
+const getCurrentUser = asyncWrapper(async (req, res) => {
+  const { id } = req.user;
+  const user = await User.findById(id);
+  if (!user) throw new appError("user not found", 404);
+  res.status(200).json({ status: "success", data: {user} });
+})
 
-export { getAllUsers, getUser, deleteUser }
+
+export { getUsers, getUser, deleteUser, getCurrentUser }
