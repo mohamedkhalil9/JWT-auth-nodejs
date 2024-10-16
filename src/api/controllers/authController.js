@@ -6,7 +6,7 @@ import genereteJWT from '../helpers/generateJWT.js';
 
 export const register = asyncWrapper(async (req, res) => {
   const { name, email, password, role } = req.body;
-  if ( !name || !email || !password ) throw new appError('please enter all fields', 422)
+  // if ( !name || !email || !password ) throw new appError('please enter all fields', 422)
 
   const user = await User.findOne({ email: email });
   if (user) throw new appError("user aleardy existed", 409);
@@ -21,7 +21,7 @@ export const register = asyncWrapper(async (req, res) => {
 
 export const login = asyncWrapper(async (req, res) => {
   const { email, password } = req.body;
-  if ( !email || !password ) throw new appError('please enter all fields', 422)
+  // if ( !email || !password ) throw new appError('please enter all fields', 422)
 
   const user = await User.findOne({ email: email });
   if (!user) throw new appError("invalid email or password", 401);
