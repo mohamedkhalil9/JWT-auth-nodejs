@@ -29,6 +29,7 @@ export const login = asyncWrapper(async (req, res) => {
   const passwordMatched = await bcrypt.compare(password, user.password);
   if (!passwordMatched) throw new appError("invalid email or password", 401);
 
+  // [ ] Access tokens and refresh token implementation
   const token = await genereteJWT({ id: user._id, email: user.email, role:user.role }) 
 
   res.status(200).json({ status: "success", data: {
@@ -38,3 +39,7 @@ export const login = asyncWrapper(async (req, res) => {
     accessToken: token
   } });
 })
+
+export const logout = (req, res) => {
+
+}
