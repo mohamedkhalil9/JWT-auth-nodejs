@@ -6,12 +6,13 @@ import { idValidator } from '../validation/validators.js';
 
 const router = express.Router();
 
-router.get('/current', verifyToken, getCurrentUser) 
+router.use(verifyToken)
+router.get('/current', getCurrentUser) 
 
-router.route('/').get(verifyToken, allowedTo('manager', 'admin'), getUsers)
+router.route('/').get(allowedTo('manager', 'admin'), getUsers)
 router.route('/:id')
-  .get(verifyToken, allowedTo('manager', 'admin'), idValidator, getUser)
-  .delete(verifyToken, allowedTo('admin'), idValidator, deleteUser)
-  .patch(verifyToken, allowedTo('admin'), idValidator, updateUser)
+  .get(allowedTo('manager', 'admin'), idValidator, getUser)
+  .delete(allowedTo('admin'), idValidator, deleteUser)
+  .patch(allowedTo('admin'), idValidator, updateUser)
 
 export default router;

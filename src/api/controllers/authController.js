@@ -2,7 +2,8 @@ import User from '../models/userModel.js';
 import asyncWrapper from '../middlewares/asyncWrapper.js';
 import appError from '../helpers/appError.js';
 import bcrypt from 'bcryptjs';
-import genereteJWT from '../helpers/generateJWT.js';
+import { generateAccessToken, generateRefreshToken } from '../helpers/generateTokens.js';
+import jwt from 'jsonwebtoken';
 
 export const register = asyncWrapper(async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -29,17 +30,64 @@ export const login = asyncWrapper(async (req, res) => {
   const passwordMatched = await bcrypt.compare(password, user.password);
   if (!passwordMatched) throw new appError("invalid email or password", 401);
 
-  // [ ] Access tokens and refresh token implementation
-  const token = await genereteJWT({ id: user._id, email: user.email, role:user.role }) 
+  const payload = { id: user._id };
+  const accessToken = await generateAccessToken(payload);
+  const refreshToken = await generateRefreshToken(payload);
+  user.token = refreshToken;
+  const newUser = await user.save();
 
-  res.status(200).json({ status: "success", data: {
+  res
+    .status(200)
+    .cookie('access', accessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
+    .cookie('refresh', refreshToken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 })
+    .json({ status: "success", data: {
     id: user._id,
     name: user.name,
     email: user.email,
-    accessToken: token
-  } });
+    }
+  });
 })
 
-export const logout = (req, res) => {
+export const newToken = asyncWrapper(async (req, res) => {
+  const token = req.cookies.refresh || req.headers.authorization;
+  if (!token) throw new appError("token is required", 401);
 
+  const decodedPayload = jwt.verify(token, process.env.REFRESH_SECRET, 
+    (err, decoded) => {
+      if (err) throw new appError("invalid token", 401);
+      return decoded;
+    }
+  ) 
+  const { id } = decodedPayload;
+  const user = await User.findById(id);
+
+  if (!token === user.token) throw appError("invalid token", 401);
+  const payload = { id: user.id };
+  const accessToken = await generateAccessToken(payload); 
+  res
+    .status(200)
+    .cookie('access', accessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
+    .json({ status: "success" });
+})
+
+export const logout = async (req, res) => {
+  const token = req.cookies.refresh || req.headers.authorization;
+  if (!token) res.sendStatus(204);
+
+  const decodedPayload = jwt.verify(token, process.env.REFRESH_SECRET, 
+    (err, decoded) => {
+      if (err) res.sendStatus(204);
+      return decoded;
+    }
+  ) 
+  const { id } = decodedPayload;
+  const user = await User.findById(id);
+
+  user.token = "";
+  await user.save();
+  res
+    .status(200)
+    .clearCookie('access', { httpOnly: true })
+    .clearCookie('refresh', { httpOnly: true })
+    .json({ status: "success" });
 }
