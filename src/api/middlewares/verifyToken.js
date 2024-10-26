@@ -1,16 +1,16 @@
 import jwt from 'jsonwebtoken';
-import AppError from '../helpers/appError.js';
+import appError from '../helpers/appError.js';
 
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization;
-  if (!token) throw new AppError("token is required", 401);
+export const verifyToken = (req, res, next) => {
+  const token = req.cookies.access || req.headers.authorization;
+  if (!token) throw new appError("token is required", 401);
 
   try {
-    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET); 
+    const decodedPayload = jwt.verify(token, process.env.ACCESS_SECRET); 
     req.user = decodedPayload;
     next();
   } catch (error) {
-    return next(new AppError("invalid token", 401));
+    return next(new appError("invalid token", 401));
   }
 }
 
