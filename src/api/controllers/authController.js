@@ -39,7 +39,7 @@ export const login = asyncWrapper(async (req, res) => {
   res
     .status(200)
     .cookie('access', accessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
-    .cookie('refresh', refreshToken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 })
+    .cookie('refresh', refreshToken, { httpOnly: true, path: '/api/v1/auth/refresh-token', maxAge: 1000 * 60 * 60 * 24 * 7 })
     .json({ status: "success", data: {
     id: user._id,
     name: user.name,
