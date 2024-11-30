@@ -66,7 +66,7 @@ export const newToken = asyncWrapper(async (req, res) => {
   const accessToken = await generateAccessToken(payload); 
   res
     .status(200)
-    .cookie('access', accessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
+    .cookie('access', accessToken, { httpOnly: true, path: '/api/v1/auth/refresh-token', maxAge: 1000 * 60 * 10 })
     .json({ status: "success" });
 })
 
