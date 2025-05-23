@@ -83,7 +83,7 @@ export const logout = async (req, res) => {
   const { id } = decodedPayload;
   const user = await User.findById(id);
 
-  user.token = "";
+  user.token = undefined;
   await user.save();
   res
     .status(200)
