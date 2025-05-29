@@ -1,26 +1,26 @@
-import User from '../models/userModel.js';
-import asyncWrapper from '../middlewares/asyncWrapper.js';
-import appError from '../helpers/appError.js';
-import bcrypt from 'bcryptjs';
+import User from "../models/userModel.js";
+import asyncWrapper from "../middlewares/asyncWrapper.js";
+import appError from "../utils/appError.js";
+import bcrypt from "bcryptjs";
 
 const getUsers = asyncWrapper(async (req, res) => {
   const users = await User.find();
-  res.status(200).json({ status: "success", data: {users} });
-})
+  res.status(200).json({ status: "success", data: { users } });
+});
 
 const getUser = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user) throw new appError("user not found", 404);
-  res.status(200).json({ status: "success", data: {user} });
-})
+  res.status(200).json({ status: "success", data: { user } });
+});
 
 const deleteUser = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const user = await User.findByIdAndDelete(id);
   if (!user) throw new appError(`there is no user with id ${id}`, 404);
   res.status(200).json({ status: "success", data: null });
-})
+});
 
 const updateUser = asyncWrapper(async (req, res) => {
   const { id } = req.params;
@@ -28,7 +28,7 @@ const updateUser = asyncWrapper(async (req, res) => {
 
   const user = await User.findById(id);
   if (!user) throw new appError(`there is no user with id ${id}`, 404);
-  
+
   let updated = req.body;
   let hashedPassword;
   if (oldPassword && newPassword) {
@@ -38,20 +38,21 @@ const updateUser = asyncWrapper(async (req, res) => {
     hashedPassword = await bcrypt.hash(newPassword, 10);
     delete updated.oldPassword;
     delete updated.newPassword;
-    updated = { ...updated, password: ''}
-  } 
+    updated = { ...updated, password: "" };
+  }
   const newUser = { ...user._doc, name, email, password: hashedPassword };
-  const updatedUser = await User.findByIdAndUpdate(id, newUser, { new:true });
+  const updatedUser = await User.findByIdAndUpdate(id, newUser, { new: true });
 
-  res.status(200).json({ status: "success", data: { updatedUser, updated }});
-})
+  res.status(200).json({ status: "success", data: { updatedUser, updated } });
+});
+
+export const updatePassword = asyncWrapper(async (req, res) => {});
 
 const getCurrentUser = asyncWrapper(async (req, res) => {
   const { id } = req.user;
   const user = await User.findById(id);
   if (!user) throw new appError("user not found", 404);
-  res.status(200).json({ status: "success", data: {user} });
-})
+  res.status(200).json({ status: "success", data: { user } });
+});
 
-
-export { getUsers, getUser, deleteUser, updateUser, getCurrentUser }
+export { getUsers, getUser, deleteUser, updateUser, getCurrentUser };
