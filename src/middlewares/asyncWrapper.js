@@ -3,7 +3,7 @@ const asyncWrapper = (fn) => {
         fn(req, res, next).catch((err) => {
             next(err);
         });
-    }
-}
+    };
+};
 
 export default asyncWrapper;
