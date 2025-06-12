@@ -1,8 +1,27 @@
-import { validationResult } from "express-validator";
+const validate = (schema, source) => {
+  return async (req, res, next) => {
+    const data =
+      source === "body"
+        ? req.body
+        : source === "params"
+          ? req.params
+          : req.query;
 
-export const validatorMiddleware = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(400).json({ status: "error", message: errors.array() });
-  next();
+    const { error } = await schema.validate(data);
+    if (error)
+      return res.status(422).json({ status: "error", message: error.message });
+    next();
+  };
+};
+
+export const validateBody = (schema) => {
+  return validate(schema, "body");
+};
+
+export const validateParams = (schema) => {
+  return validate(schema, "params");
+};
+
+export const validateQuery = (schema) => {
+  return validate(schema, "query");
 };
