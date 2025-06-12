@@ -1,28 +1,44 @@
 import User from "../models/userModel.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import appError from "../utils/appError.js";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
 import jwt from "jsonwebtoken";
+import { sendResetEmail } from "../utils/sendEmail.js";
+import crypto from "crypto";
 
 export const register = asyncWrapper(async (req, res) => {
-  const { name, email, password, role } = req.body;
-  // if ( !name || !email || !password ) throw new appError('please enter all fields', 422)
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    role,
+    gender,
+    dateOfBirth,
+    phone,
+    country,
+    address,
+  } = req.body;
 
   const user = await User.findOne({ email: email });
   if (user) throw new appError("user aleardy existed", 409);
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  // const newUser = new User({name, email, password});
-  // await newUser.save();
   const newUser = await User.create({
-    name,
+    firstName,
+    lastName,
     email,
-    password: hashedPassword,
+    password,
+    profileImg: `https://eu.ui-avatars.com/api/?name=${firstName}+${lastName}`,
     role,
+    gender,
+    dateOfBirth,
+    phone,
+    country,
+    address,
   });
 
   res.status(201).json({ status: "success", data: newUser });
@@ -30,34 +46,36 @@ export const register = asyncWrapper(async (req, res) => {
 
 export const login = asyncWrapper(async (req, res) => {
   const { email, password } = req.body;
-  // if ( !email || !password ) throw new appError('please enter all fields', 422)
 
   const user = await User.findOne({ email: email });
   if (!user) throw new appError("invalid email or password", 401);
 
+  // const validPass = user.isValidPassword(password);
   const passwordMatched = await bcrypt.compare(password, user.password);
   if (!passwordMatched) throw new appError("invalid email or password", 401);
 
   const payload = { id: user._id };
-  const accessToken = await generateAccessToken(payload);
-  const refreshToken = await generateRefreshToken(payload);
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
   user.token = refreshToken;
-  const newUser = await user.save();
+  await user.save();
+  const newUser = { ...user._doc };
+  delete newUser.password;
 
   res
     .status(200)
-    .cookie("access", accessToken, { httpOnly: true, maxAge: 1000 * 60 * 10 })
+    .cookie("access", accessToken, { httpOnly: true, maxAge: 1000 * 60 })
     .cookie("refresh", refreshToken, {
       httpOnly: true,
-      path: "/api/v1/auth/refresh-token",
+      // path: "/api/v1/auth/refresh-token",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     })
     .json({
       status: "success",
       data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
+        newUser,
+        accessToken,
+        refreshToken,
       },
     });
 });
@@ -66,16 +84,14 @@ export const newToken = asyncWrapper(async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
   if (!token) throw new appError("token is required", 401);
 
-  const decodedPayload = jwt.verify(
-    token,
-    process.env.REFRESH_SECRET,
-    (err, decoded) => {
-      if (err) throw new appError("invalid token", 401);
-      return decoded;
-    },
-  );
-  const { id } = decodedPayload;
-  const user = await User.findById(id);
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+  } catch (error) {
+    throw new appError("invalid token", 401);
+  }
+
+  const user = await User.findById(decoded.id);
 
   if (!token === user.token) throw appError("invalid token", 401);
   const payload = { id: user.id };
@@ -84,7 +100,7 @@ export const newToken = asyncWrapper(async (req, res) => {
     .status(200)
     .cookie("access", accessToken, {
       httpOnly: true,
-      path: "/api/v1/auth/refresh-token",
+      // path: "/api/v1/auth/refresh-token",
       maxAge: 1000 * 60 * 10,
     })
     .json({ status: "success" });
@@ -94,22 +110,109 @@ export const logout = async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
   if (!token) res.sendStatus(204);
 
-  const decodedPayload = jwt.verify(
-    token,
-    process.env.REFRESH_SECRET,
-    (err, decoded) => {
-      if (err) res.sendStatus(204);
-      return decoded;
-    },
-  );
-  const { id } = decodedPayload;
-  const user = await User.findById(id);
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+  } catch (error) {
+    return new appError("ivalid token", 401);
+  }
 
-  user.token = undefined;
-  await user.save();
+  const user = await User.findByIdAndUpdate(decoded.id, { token: undefined });
   res
     .status(200)
     .clearCookie("access", { httpOnly: true })
     .clearCookie("refresh", { httpOnly: true })
     .json({ status: "success" });
 };
+
+export const forgotPassword = asyncWrapper(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) throw new appError("user not found", 404);
+
+  const otp = crypto.randomInt(1000, 10000).toString();
+  const hashedOtp = await bcrypt.hash(otp, 10);
+  user.otp = hashedOtp;
+  user.otpExpire = Date.now() + 1000 * 60 * 2;
+  await user.save();
+
+  sendResetEmail(email, otp);
+
+  res
+    .status(200)
+    .cookie("reset", email, {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 2,
+    })
+    .json({
+      status: "success",
+      message: "email sent successfully",
+      data: null,
+    });
+});
+
+export const verifyOtp = asyncWrapper(async (req, res) => {
+  const { otp } = req.body;
+  const email = req.cookies.reset ?? req.body.email;
+
+  const user = await User.findOne({ email });
+  if (!user || !user.otp) throw new appError("user is not found", 404);
+
+  const isMatch = await bcrypt.compare(otp, user.otp);
+  if (Date.now() > user.otpExpire || !isMatch)
+    throw new appError("OTP Code is not valid", 409);
+
+  user.otpVerifed = true;
+  await user.save();
+
+  res.status(200).json({ status: "success", data: null });
+});
+
+export const resetPassword = asyncWrapper(async (req, res) => {
+  const email = req.cookies.reset ?? req.body.email;
+  const { password } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) throw new appError("user is not found", 404);
+
+  if (!user.otpVerifed || Date.now() > user.otpExpire)
+    throw new appError("otp is not verified", 401);
+
+  user.password = password;
+  user.otp = undefined;
+  user.otpExpire = undefined;
+  user.otpVerifed = undefined;
+  await user.save();
+
+  res
+    .status(200)
+    .json({ status: "success", message: "Password Updated", data: null });
+});
+export const oauth = asyncWrapper(async (req, res) => {
+  const user = await User.findOne({ email: req.user.email });
+  if (!user) throw new appError("user not found", 404);
+
+  const payload = { id: req.user._id };
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+  user.token = refreshToken;
+  await user.save();
+
+  res
+    .status(200)
+    .cookie("access", accessToken, { httpOnly: true, maxAge: 1000 * 60 })
+    .cookie("refresh", refreshToken, {
+      httpOnly: true,
+      // path: "/api/v1/auth/refresh-token",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    })
+    .json({
+      status: "success",
+      data: {
+        user,
+        accessToken,
+        refreshToken,
+      },
+    });
+});
