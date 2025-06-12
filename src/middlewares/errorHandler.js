@@ -4,7 +4,7 @@ const notFound = (req, res, next) => {
     .json({ status: "error", message: "this resource is not available" });
 };
 
-const errorHandler = (error, req, res, next) => {
+const globalErrorHandler = (error, req, res, next) => {
   res.status(error.statusCode || 500).json({
     status: error.statusText || "error",
     message: error.message,
@@ -13,4 +13,4 @@ const errorHandler = (error, req, res, next) => {
   });
 };
 
-export { notFound, errorHandler };
+export { notFound, globalErrorHandler };
