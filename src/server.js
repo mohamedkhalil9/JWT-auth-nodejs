@@ -1,7 +1,16 @@
+import http from "http";
 import app from "./app.js";
+import dbConnect from "./config/db.js";
 
 const PORT = process.env.PORT;
 
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+dbConnect();
+
+// TODO: process.exit() ?
+server.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
+
+// server.on("listening", () => console.log("using on listening"));

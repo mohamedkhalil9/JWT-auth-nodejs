@@ -1,17 +1,13 @@
 import express from "express";
 import "dotenv/config";
-
-import morgan from "morgan";
-import helmet from "helmet";
-import cors from "cors";
-import rateLimit from "express-rate-limit";
-
 import cookieParser from "cookie-parser";
-import { notFound, errorHandler } from "./middlewares/errorHandler.js";
-import dbConnect from "./config/db.js";
-import appRoutes from "./routes/indexRoutes.js";
-
-dbConnect();
+import passport from "passport";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
+import { notFound, globalErrorHandler } from "./middlewares/errorHandler.js";
+import appRouter from "./routes/index.js";
 
 const app = express();
 app.use(express.json());
@@ -30,9 +26,10 @@ app.use(
 );
 app.use(morgan("dev"));
 
-app.use("/api/v1", appRoutes);
+app.use(passport.initialize());
+app.use("/api/v1", appRouter);
 
 app.all("*", notFound);
-app.use(errorHandler);
+app.use(globalErrorHandler);
 
 export default app;
