@@ -37,11 +37,21 @@ router.get(
     session: false,
     failureRedirect: false,
   }),
-  oauth,
+  login,
 );
 
-router.get("/github");
-router.get("/github/callback");
+router.get(
+  "/github",
+  passport.authenticate("github", {
+    scope: ["user:email"],
+    session: false,
+  }),
+);
+router.get(
+  "/github/callback",
+  passport.authenticate("github", { session: false, failureRedirect: false }),
+  login,
+);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOtp);

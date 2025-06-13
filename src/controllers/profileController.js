@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { sendVerifyEmail } from "../utils/sendEmail.js";
 
 export const getUserProfile = asyncWrapper(async (req, res) => {
+  console.log(req.user);
   const { id } = req.user;
   const user = await User.findById(id).select("-password");
   if (!user) throw new appError("user not found", 404);
