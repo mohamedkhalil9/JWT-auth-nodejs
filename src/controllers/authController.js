@@ -45,14 +45,18 @@ export const register = asyncWrapper(async (req, res) => {
 });
 
 export const login = asyncWrapper(async (req, res) => {
-  const { email, password } = req.body;
+  // const { email, password } = req.body;
+  const email = req.body.email ?? req.user.email;
 
   const user = await User.findOne({ email: email });
   if (!user) throw new appError("invalid email or password", 401);
 
-  // const validPass = user.isValidPassword(password);
-  const passwordMatched = await bcrypt.compare(password, user.password);
-  if (!passwordMatched) throw new appError("invalid email or password", 401);
+  if (req.body.password) {
+    const { password } = req.body;
+    // const validPass = user.isValidPassword(password);
+    const passwordMatched = await bcrypt.compare(password, user.password);
+    if (!passwordMatched) throw new appError("invalid email or password", 401);
+  }
 
   const payload = { id: user._id };
   const accessToken = generateAccessToken(payload);
@@ -190,7 +194,9 @@ export const resetPassword = asyncWrapper(async (req, res) => {
     .json({ status: "success", message: "Password Updated", data: null });
 });
 export const oauth = asyncWrapper(async (req, res) => {
-  const user = await User.findOne({ email: req.user.email });
+  const user = await User.findOne({ email: req.user.email }).select(
+    "-password",
+  );
   if (!user) throw new appError("user not found", 404);
 
   const payload = { id: req.user._id };

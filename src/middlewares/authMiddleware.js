@@ -3,6 +3,7 @@ import AppError from "../utils/appError.js";
 import jwt from "jsonwebtoken";
 
 const authenticate = (req, res, next) => {
+  // NOTE: bearer token
   const token = req.headers.authorization || req.cookies.access;
   if (!token) throw new AppError("token is required", 401);
 
