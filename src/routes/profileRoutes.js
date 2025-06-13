@@ -11,6 +11,7 @@ import {
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { updatePassSchema, updateUserSchema } from "../validation/schemas.js";
 import { validateBody } from "../middlewares/validatorMiddleware.js";
+import upload from "../middlewares/multer.js";
 
 const router = Router();
 
@@ -28,6 +29,6 @@ router
   .route("/update-password")
   .patch(validateBody(updatePassSchema), updatePassword);
 
-router.route("/upload").post(uploadProfileImage);
+router.route("/upload").post(upload.single("image"), uploadProfileImage);
 
 export default router;
