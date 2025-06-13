@@ -193,32 +193,3 @@ export const resetPassword = asyncWrapper(async (req, res) => {
     .status(200)
     .json({ status: "success", message: "Password Updated", data: null });
 });
-export const oauth = asyncWrapper(async (req, res) => {
-  const user = await User.findOne({ email: req.user.email }).select(
-    "-password",
-  );
-  if (!user) throw new appError("user not found", 404);
-
-  const payload = { id: req.user._id };
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
-  user.token = refreshToken;
-  await user.save();
-
-  res
-    .status(200)
-    .cookie("access", accessToken, { httpOnly: true, maxAge: 1000 * 60 })
-    .cookie("refresh", refreshToken, {
-      httpOnly: true,
-      // path: "/api/v1/auth/refresh-token",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    })
-    .json({
-      status: "success",
-      data: {
-        user,
-        accessToken,
-        refreshToken,
-      },
-    });
-});

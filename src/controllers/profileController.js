@@ -4,6 +4,7 @@ import appError from "../utils/appError.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendVerifyEmail } from "../utils/sendEmail.js";
+import { v2 as cloudinary } from "cloudinary";
 
 export const getUserProfile = asyncWrapper(async (req, res) => {
   console.log(req.user);
@@ -48,6 +49,26 @@ export const updatePassword = asyncWrapper(async (req, res) => {
 });
 
 export const uploadProfileImage = asyncWrapper(async (req, res) => {
+  const { id } = req.user;
+  const img = req.file;
+
+  // const upload = await cloudinary.uploader.upload(img.path);
+  const upload = await new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream({ resource_type: "image" }, (error, result) =>
+        error ? reject(error) : resolve(result),
+      )
+      .end(img.buffer);
+  });
+  const url = upload.secure_url;
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { profileImg: url },
+    { new: true },
+  ).select("-password");
+
+  res.status(200).json({ status: "success", data: user });
   // TODO: get the file --> multer
   // upload it --> cloudinary
   // get the url and save it profileImg

@@ -7,7 +7,6 @@ import {
   forgotPassword,
   verifyOtp,
   resetPassword,
-  oauth,
 } from "../controllers/authController.js";
 import {
   loginSchema,
