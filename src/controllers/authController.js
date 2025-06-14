@@ -1,9 +1,8 @@
 import User from "../models/userModel.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
-import appError from "../utils/appError.js";
+import AppError from "../utils/AppError.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { verifyToken } from "../utils/generateTokens.js";
+import { verifyToken } from "../utils/verifyToken.js";
 import { sendResetEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
 
@@ -22,7 +21,7 @@ export const register = asyncWrapper(async (req, res) => {
   } = req.body;
 
   const user = await User.findOne({ email: email });
-  if (user) throw new appError("user aleardy existed", 409);
+  if (user) throw new AppError("user aleardy existed", 409);
 
   const newUser = await User.create({
     firstName,
@@ -45,11 +44,11 @@ export const login = asyncWrapper(async (req, res) => {
   const email = req.body.email ?? req.user.email;
 
   const user = await User.findOne({ email: email });
-  if (!user) throw new appError("invalid email or password", 401);
+  if (!user) throw new AppError("invalid email or password", 401);
 
   if (req.body.password) {
     const { password } = req.body;
-    if (!user.password) throw new appError("invalid email or password", 401);
+    if (!user.password) throw new AppError("invalid email or password", 401);
     await user.isValidPassword(password);
   }
 
@@ -81,12 +80,12 @@ export const login = asyncWrapper(async (req, res) => {
 
 export const newToken = asyncWrapper(async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
-  if (!token) throw new appError("token is required", 401);
+  if (!token) throw new AppError("token is required", 401);
 
   const decoded = verifyToken(token, process.env.REFRESH_SECRET);
   const user = await User.findById(decoded.id);
 
-  if (!token === user.token) throw appError("invalid token", 401);
+  if (!token === user.token) throw AppError("invalid token", 401);
   const payload = { id: user.id };
   const accessToken = await user.generateAccessToken(payload);
   res
@@ -103,12 +102,7 @@ export const logout = async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
   if (!token) res.sendStatus(204);
 
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.REFRESH_SECRET);
-  } catch (error) {
-    return new appError("ivalid token", 401);
-  }
+  const decoded = verifyToken(token, process.env.REFRESH_SECRET);
 
   const user = await User.findByIdAndUpdate(decoded.id, { token: undefined });
   res
@@ -122,7 +116,7 @@ export const forgotPassword = asyncWrapper(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) throw new appError("user not found", 404);
+  if (!user) throw new AppError("user not found", 404);
 
   const otp = crypto.randomInt(100000, 1000000).toString();
   const hashedOtp = await bcrypt.hash(otp, 10);
@@ -150,11 +144,11 @@ export const verifyOtp = asyncWrapper(async (req, res) => {
   const email = req.cookies.reset ?? req.body.email;
 
   const user = await User.findOne({ email });
-  if (!user || !user.otp) throw new appError("user is not found", 404);
+  if (!user || !user.otp) throw new AppError("user is not found", 404);
 
   const isMatch = await bcrypt.compare(otp, user.otp);
   if (Date.now() > user.otpExpire || !isMatch)
-    throw new appError("OTP Code is not valid", 409);
+    throw new AppError("OTP Code is not valid", 409);
 
   user.otpVerifed = true;
   await user.save();
@@ -167,10 +161,10 @@ export const resetPassword = asyncWrapper(async (req, res) => {
   const { password } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) throw new appError("user is not found", 404);
+  if (!user) throw new AppError("user is not found", 404);
 
   if (!user.otpVerifed || Date.now() > user.otpExpire)
-    throw new appError("otp is not verified", 401);
+    throw new AppError("otp is not verified", 401);
 
   user.password = password;
   user.otp = undefined;

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import AppError from "../utils/appError.js";
+import AppError from "../utils/AppError.js";
 import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
@@ -61,9 +61,6 @@ userSchema.pre("save", async function (next) {
 
   this.password = await bcrypt.hash(this.password, 10);
   next();
-  // } catch (error) {
-  //   next(error);
-  // }
 });
 userSchema.methods.isValidPassword = async function (password) {
   const valid = await bcrypt.compare(password, this.password);
@@ -72,7 +69,7 @@ userSchema.methods.isValidPassword = async function (password) {
 
 userSchema.methods.generateAccessToken = (payload) => {
   const token = jwt.sign(payload, process.env.ACCESS_SECRET, {
-    expiresIn: "10m",
+    expiresIn: "30s",
   });
   return token;
 };
@@ -81,14 +78,6 @@ userSchema.methods.generateRefreshToken = (payload) => {
     expiresIn: "1w",
   });
   return token;
-};
-userSchema.methods.verifyToken = (token, secret) => {
-  let decoded;
-  try {
-    decoded = jwt.verify(token, secret);
-  } catch (error) {
-    throw new appError("invalid token", 401);
-  }
 };
 
 const User = mongoose.model("User", userSchema);

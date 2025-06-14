@@ -1,16 +1,15 @@
 import User from "../models/userModel.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
-import appError from "../utils/appError.js";
-import bcrypt from "bcrypt";
+import AppError from "../utils/AppError.js";
 import jwt from "jsonwebtoken";
 import { sendVerifyEmail } from "../utils/sendEmail.js";
 import { v2 as cloudinary } from "cloudinary";
+import { verifyToken } from "../utils/verifyToken.js";
 
 export const getUserProfile = asyncWrapper(async (req, res) => {
-  console.log(req.user);
   const { id } = req.user;
   const user = await User.findById(id).select("-password");
-  if (!user) throw new appError("user not found", 404);
+  if (!user) throw new AppError("user not found", 404);
   res.status(200).json({ status: "success", data: user });
 });
 
@@ -18,7 +17,7 @@ export const updateUserProfile = asyncWrapper(async (req, res) => {
   const { id } = req.user;
   const userData = req.body;
   const user = await User.findByIdAndUpdate(id, userData, { new: true });
-  if (!user) throw new appError("user not found", 404);
+  if (!user) throw new AppError("user not found", 404);
 
   res.status(200).json({ status: "success", data: user });
 });
@@ -27,7 +26,7 @@ export const deleteUserProfile = asyncWrapper(async (req, res) => {
   const { id } = req.user;
   // NOTE: soft delete
   const user = await User.findByIdAndDelete(id);
-  if (!user) throw new appError("user not found", 404);
+  if (!user) throw new AppError("user not found", 404);
 
   res.status(200).json({ status: "success", data: null });
 });
@@ -37,7 +36,7 @@ export const updatePassword = asyncWrapper(async (req, res) => {
   const { password, newPassword } = req.body;
 
   const user = await User.findById(id);
-  if (!user) throw new appError(`there is no user with id ${id}`, 404);
+  if (!user) throw new AppError(`there is no user with id ${id}`, 404);
 
   await user.isValidPassword(password);
 
@@ -76,7 +75,7 @@ export const uploadProfileImage = asyncWrapper(async (req, res) => {
 export const sendEmailVerification = asyncWrapper(async (req, res) => {
   const { id } = req.user;
   const user = await User.findById(id);
-  if (!user) throw new appError("user not found", 404);
+  if (!user) throw new AppError("user not found", 404);
 
   const token = jwt.sign({ id }, process.env.VERIFY_EMAIL_SECRET, {
     expiresIn: "12h",
@@ -93,12 +92,7 @@ export const sendEmailVerification = asyncWrapper(async (req, res) => {
 export const verifyEmail = asyncWrapper(async (req, res) => {
   const { token } = req.params;
 
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.VERIFY_EMAIL_SECRET);
-  } catch (error) {
-    throw new appError("invalid token", 401);
-  }
+  const decoded = verifyToken(token, process.env.VERIFY_EMAIL_SECRET);
 
   const user = await User.findByIdAndUpdate(
     decoded.id,
