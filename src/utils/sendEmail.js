@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import asyncWrapper from "../middlewares/asyncWrapper.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 import { verifyTmp, resetTmp } from "./templates.js";
 
 const transporter = nodemailer.createTransport({
@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = asyncWrapper(async (email, subject, tmp) => {
+const sendEmail = asyncHandler(async (email, subject, tmp) => {
   const options = {
     from: process.env.EMAIL,
     to: email,
@@ -23,11 +23,15 @@ const sendEmail = asyncWrapper(async (email, subject, tmp) => {
 });
 
 export const sendVerifyEmail = (email, token) => {
-  const verifyHtml = verifyTmp(token);
-  sendEmail(email, "Verify Email", verifyHtml);
+  const verifyTemplate = verifyTmp(token);
+  sendEmail(email, "Verify Email", verifyTemplate);
 };
 
 export const sendResetEmail = (email, otp) => {
-  const resetHtml = resetTmp(otp);
-  sendEmail(email, "Reset Password", resetHtml);
+  let resetTemplate = resetTmp;
+  resetTemplate = resetTemplate.replace(/{{OTP_CODE}}/g, otp);
+  for (let i = 0; i < 6; i++) {
+    resetTemplate = resetTemplate.replace(`{{DIGIT_${i + 1}}}`, otp[i]);
+  }
+  sendEmail(email, "Reset Password", resetTemplate);
 };
