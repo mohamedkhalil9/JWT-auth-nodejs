@@ -91,8 +91,6 @@ export const resetTmp = `
         .tips li{margin-bottom:5px}
         .footer{background:#f8fafc;padding:20px;text-align:center;font-size:12px;color:#64748b}
         @media(max-width:480px){.container{margin:10px;border-radius:15px}.header{padding:30px 15px}.content{padding:30px 20px}.digit{width:35px;height:45px;font-size:20px}}
-        
-        /* Added for better email compatibility */
         .copy-note {margin-top: 15px; font-size: 13px; color: #64748b;}
         .code-display {background: #f1f5f9; padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; font-weight: bold;}
     </style>
@@ -115,29 +113,26 @@ export const resetTmp = `
             </div>
             
             <div class="text">
-                Use the verification code below to reset your password. This code is valid for 10 minutes.
+                Use the verification code below to reset your password. This code is valid for 5 minutes.
             </div>
             
             <div class="otp-box">
                 <div class="otp-label">Your verification code:</div>
                 <div class="otp-digits">
-                    <div class="digit">7</div>
-                    <div class="digit">2</div>
-                    <div class="digit">9</div>
-                    <div class="digit">4</div>
-                    <div class="digit">1</div>
-                    <div class="digit">8</div>
+                    <div class="digit">{{DIGIT_1}}</div>
+                    <div class="digit">{{DIGIT_2}}</div>
+                    <div class="digit">{{DIGIT_3}}</div>
+                    <div class="digit">{{DIGIT_4}}</div>
+                    <div class="digit">{{DIGIT_5}}</div>
+                    <div class="digit">{{DIGIT_6}}</div>
                 </div>
                 <div class="full-code">
-                    <strong>Full Code:</strong> <span class="code-display">729418</span>
-                </div>
-                <div class="copy-note">
-                    ⚠️ For security, copy this code manually
+                    <strong>Full Code:</strong> <span class="code-display">{{OTP_CODE}}</span>
                 </div>
             </div>
             
             <div class="warning">
-                <strong>⏰ Expires in 10 minutes</strong><br>
+                <strong>⏰ Expires in 5 minutes</strong><br>
                 If it expires, you'll need to request a new password reset.
             </div>
             
@@ -158,27 +153,6 @@ export const resetTmp = `
         <div class="footer">
             © 2025 Your Company • <a href="#" style="color:#64748b">Unsubscribe</a>
         </div>
-    </div>
-    
-    <div style="max-width: 600px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h2 style="color: #e74c3c; margin-bottom: 15px;">What Changed for Gmail Compatibility:</h2>
-        <ul style="list-style-type: none; padding-left: 0;">
-            <li style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                ✅ <strong>Digit Alignment Fixed</strong>: Replaced Flexbox with inline-block and text-align center
-            </li>
-            <li style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                ✅ <strong>Copy Button Removed</strong>: JavaScript doesn't work in emails - added manual copy instructions
-            </li>
-            <li style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                ✅ <strong>Animation Effects Removed</strong>: Email clients don't support complex CSS animations
-            </li>
-            <li style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                ✅ <strong>Gradient Support</strong>: Kept simple linear gradients that Gmail supports
-            </li>
-            <li style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                ✅ <strong>Enhanced Code Visibility</strong>: Made the full code more prominent for easy copying
-            </li>
-        </ul>
     </div>
 </body>
 </html>`;
