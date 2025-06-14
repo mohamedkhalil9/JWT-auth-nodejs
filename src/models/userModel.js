@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import AppError from "../utils/appError.js";
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
@@ -56,24 +57,40 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  try {
-    if (!this.isModified("password")) return next();
+  if (!this.isModified("password")) return next();
 
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-
-    next();
-  } catch (error) {
-    next(error);
-  }
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+  // } catch (error) {
+  //   next(error);
+  // }
 });
-// userSchema.methods.isValidPassword = async function (password) {
-//   try {
-//     return await bcrypt.compare(password, this.password);
-//   } catch (error) {
-//     throw new AppError("Password comparison failed");
-//   }
-// };
+userSchema.methods.isValidPassword = async function (password) {
+  const valid = await bcrypt.compare(password, this.password);
+  if (!valid) throw new AppError("ivalid email or password", 401);
+};
+
+userSchema.methods.generateAccessToken = (payload) => {
+  const token = jwt.sign(payload, process.env.ACCESS_SECRET, {
+    expiresIn: "10m",
+  });
+  return token;
+};
+userSchema.methods.generateRefreshToken = (payload) => {
+  const token = jwt.sign(payload, process.env.REFRESH_SECRET, {
+    expiresIn: "1w",
+  });
+  return token;
+};
+userSchema.methods.verifyToken = (token, secret) => {
+  let decoded;
+  try {
+    decoded = jwt.verify(token, secret);
+  } catch (error) {
+    throw new appError("invalid token", 401);
+  }
+};
+
 const User = mongoose.model("User", userSchema);
 
 export default User;
