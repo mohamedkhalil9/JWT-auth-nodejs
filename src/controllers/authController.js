@@ -1,12 +1,12 @@
 import User from "../models/userModel.js";
-import asyncWrapper from "../middlewares/asyncWrapper.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 import AppError from "../utils/AppError.js";
 import bcrypt from "bcrypt";
 import { verifyToken } from "../utils/verifyToken.js";
 import { sendResetEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
 
-export const register = asyncWrapper(async (req, res) => {
+export const register = asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
@@ -40,7 +40,7 @@ export const register = asyncWrapper(async (req, res) => {
   res.status(201).json({ status: "success", data: newUser });
 });
 
-export const login = asyncWrapper(async (req, res) => {
+export const login = asyncHandler(async (req, res) => {
   const email = req.body.email ?? req.user.email;
 
   const user = await User.findOne({ email: email });
@@ -78,7 +78,7 @@ export const login = asyncWrapper(async (req, res) => {
     });
 });
 
-export const newToken = asyncWrapper(async (req, res) => {
+export const newToken = asyncHandler(async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
   if (!token) throw new AppError("token is required", 401);
 
@@ -93,7 +93,7 @@ export const newToken = asyncWrapper(async (req, res) => {
     .cookie("access", accessToken, {
       httpOnly: true,
       // path: "/api/v1/auth/refresh-token",
-      maxAge: 1000 * 60 * 10,
+      maxAge: 1000 * 60 * 5,
     })
     .json({ status: "success" });
 });
@@ -112,7 +112,7 @@ export const logout = async (req, res) => {
     .json({ status: "success" });
 };
 
-export const forgotPassword = asyncWrapper(async (req, res) => {
+export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
@@ -121,7 +121,7 @@ export const forgotPassword = asyncWrapper(async (req, res) => {
   const otp = crypto.randomInt(100000, 1000000).toString();
   const hashedOtp = await bcrypt.hash(otp, 10);
   user.otp = hashedOtp;
-  user.otpExpire = Date.now() + 1000 * 60 * 2;
+  user.otpExpire = Date.now() + 1000 * 60 * 5;
   await user.save();
 
   sendResetEmail(email, otp);
@@ -130,7 +130,7 @@ export const forgotPassword = asyncWrapper(async (req, res) => {
     .status(200)
     .cookie("reset", email, {
       httpOnly: true,
-      maxAge: 1000 * 60 * 2,
+      maxAge: 1000 * 60 * 5,
     })
     .json({
       status: "success",
@@ -139,7 +139,7 @@ export const forgotPassword = asyncWrapper(async (req, res) => {
     });
 });
 
-export const verifyOtp = asyncWrapper(async (req, res) => {
+export const verifyOtp = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   const email = req.cookies.reset ?? req.body.email;
 
@@ -156,7 +156,7 @@ export const verifyOtp = asyncWrapper(async (req, res) => {
   res.status(200).json({ status: "success", data: null });
 });
 
-export const resetPassword = asyncWrapper(async (req, res) => {
+export const resetPassword = asyncHandler(async (req, res) => {
   const email = req.cookies.reset ?? req.body.email;
   const { password } = req.body;
 

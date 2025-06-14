@@ -69,7 +69,7 @@ userSchema.methods.isValidPassword = async function (password) {
 
 userSchema.methods.generateAccessToken = (payload) => {
   const token = jwt.sign(payload, process.env.ACCESS_SECRET, {
-    expiresIn: "30s",
+    expiresIn: "5m",
   });
   return token;
 };
