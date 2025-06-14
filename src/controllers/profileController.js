@@ -39,8 +39,7 @@ export const updatePassword = asyncWrapper(async (req, res) => {
   const user = await User.findById(id);
   if (!user) throw new appError(`there is no user with id ${id}`, 404);
 
-  const passwordMatched = await bcrypt.compare(password, user.password);
-  if (!passwordMatched) throw new appError("invalid password", 400);
+  await user.isValidPassword(password);
 
   user.password = newPassword;
   await user.save();

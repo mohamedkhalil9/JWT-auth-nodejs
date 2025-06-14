@@ -2,11 +2,8 @@ import User from "../models/userModel.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import appError from "../utils/appError.js";
 import bcrypt from "bcrypt";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../utils/generateTokens.js";
 import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/generateTokens.js";
 import { sendResetEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
 
@@ -45,7 +42,6 @@ export const register = asyncWrapper(async (req, res) => {
 });
 
 export const login = asyncWrapper(async (req, res) => {
-  // const { email, password } = req.body;
   const email = req.body.email ?? req.user.email;
 
   const user = await User.findOne({ email: email });
@@ -53,14 +49,13 @@ export const login = asyncWrapper(async (req, res) => {
 
   if (req.body.password) {
     const { password } = req.body;
-    // const validPass = user.isValidPassword(password);
-    const passwordMatched = await bcrypt.compare(password, user.password);
-    if (!passwordMatched) throw new appError("invalid email or password", 401);
+    if (!user.password) throw new appError("invalid email or password", 401);
+    await user.isValidPassword(password);
   }
 
   const payload = { id: user._id };
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+  const accessToken = user.generateAccessToken(payload);
+  const refreshToken = user.generateRefreshToken(payload);
   user.token = refreshToken;
   await user.save();
   const newUser = { ...user._doc };
@@ -88,18 +83,12 @@ export const newToken = asyncWrapper(async (req, res) => {
   const token = req.cookies.refresh || req.headers.authorization;
   if (!token) throw new appError("token is required", 401);
 
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.REFRESH_SECRET);
-  } catch (error) {
-    throw new appError("invalid token", 401);
-  }
-
+  const decoded = verifyToken(token, process.env.REFRESH_SECRET);
   const user = await User.findById(decoded.id);
 
   if (!token === user.token) throw appError("invalid token", 401);
   const payload = { id: user.id };
-  const accessToken = await generateAccessToken(payload);
+  const accessToken = await user.generateAccessToken(payload);
   res
     .status(200)
     .cookie("access", accessToken, {
@@ -135,7 +124,7 @@ export const forgotPassword = asyncWrapper(async (req, res) => {
   const user = await User.findOne({ email });
   if (!user) throw new appError("user not found", 404);
 
-  const otp = crypto.randomInt(1000, 10000).toString();
+  const otp = crypto.randomInt(100000, 1000000).toString();
   const hashedOtp = await bcrypt.hash(otp, 10);
   user.otp = hashedOtp;
   user.otpExpire = Date.now() + 1000 * 60 * 2;
