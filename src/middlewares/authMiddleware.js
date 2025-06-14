@@ -1,19 +1,15 @@
 import User from "../models/userModel.js";
-import AppError from "../utils/appError.js";
-import jwt from "jsonwebtoken";
+import AppError from "../utils/AppError.js";
+import { verifyToken } from "../utils/verifyToken.js";
 
 const authenticate = (req, res, next) => {
   // NOTE: bearer token
   const token = req.headers.authorization || req.cookies.access;
   if (!token) throw new AppError("token is required", 401);
 
-  try {
-    const decodedPayload = jwt.verify(token, process.env.ACCESS_SECRET);
-    req.user = decodedPayload;
-    next();
-  } catch (error) {
-    return next(new AppError("invalid token", 401));
-  }
+  const decodedPayload = verifyToken(token, process.env.ACCESS_SECRET);
+  req.user = decodedPayload;
+  next();
 };
 
 const authorize = (...roles) => {
