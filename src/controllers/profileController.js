@@ -18,7 +18,6 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
   const userData = req.body;
   const user = await User.findByIdAndUpdate(id, userData, { new: true });
   if (!user) throw new AppError("user not found", 404);
-
   res.status(200).json({ status: "success", data: user });
 });
 
@@ -27,7 +26,6 @@ export const deleteUserProfile = asyncHandler(async (req, res) => {
   // NOTE: soft delete
   const user = await User.findByIdAndDelete(id);
   if (!user) throw new AppError("user not found", 404);
-
   res.status(200).json({ status: "success", data: null });
 });
 
@@ -67,9 +65,6 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
   ).select("-password");
 
   res.status(200).json({ status: "success", data: user });
-  // TODO: get the file --> multer
-  // upload it --> cloudinary
-  // get the url and save it profileImg
 });
 
 export const sendEmailVerification = asyncHandler(async (req, res) => {
@@ -93,7 +88,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.params;
 
   const decoded = verifyToken(token, process.env.VERIFY_EMAIL_SECRET);
-
   const user = await User.findByIdAndUpdate(
     decoded.id,
     {
