@@ -69,7 +69,7 @@ The API will be available at `http://localhost:4000`
 
 ```bash
 # Register a new user
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:4000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -86,7 +86,7 @@ curl -X POST http://localhost:4000/api/auth/register \
 #### Register User
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 ```
 
 **Request Body:**
@@ -105,7 +105,6 @@ POST /api/auth/register
 ```json
 {
   "success": true,
-  "message": "User registered successfully. Please verify your email.",
   "user": {
     "id": "uuid",
     "email": "user@example.com",
@@ -119,7 +118,7 @@ POST /api/auth/register
 #### Login User
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 ```
 
 **Request Body:**
@@ -136,11 +135,8 @@ POST /api/auth/login
 ```json
 {
   "success": true,
-  "message": "Login successful",
-  "tokens": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "uuid",
     "email": "user@example.com",
@@ -154,7 +150,7 @@ POST /api/auth/login
 #### Logout User
 
 ```http
-POST /api/auth/logout
+POST /api/v1/auth/logout
 ```
 
 **Headers:**
@@ -175,7 +171,7 @@ Authorization: Bearer your-jwt-token
 #### Refresh Token
 
 ```http
-POST /api/auth/refresh
+POST /api/v1/auth/refresh-token
 ```
 
 **Request Body:**
@@ -191,7 +187,7 @@ POST /api/auth/refresh
 #### Forgot Password
 
 ```http
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
 ```
 
 **Request Body:**
@@ -205,7 +201,21 @@ POST /api/auth/forgot-password
 #### Reset Password
 
 ```http
-POST /api/auth/reset-password/:token
+POST /api/v1/auth/verify-otp
+```
+
+**Request Body:**
+
+```json
+{
+  "otp": "123456"
+}
+```
+
+#### Reset Password
+
+```http
+POST /api/v1/auth/reset-password/
 ```
 
 **Request Body:**
@@ -213,49 +223,7 @@ POST /api/auth/reset-password/:token
 ```json
 {
   "password": "NewSecurePass123!"
-}
-```
-
-#### Change Password
-
-```http
-PUT /api/auth/change-password
-```
-
-**Headers:**
-
-```
-Authorization: Bearer your-jwt-token
-```
-
-**Request Body:**
-
-```json
-{
-  "currentPassword": "OldPassword123!",
-  "newPassword": "NewSecurePass123!"
-}
-```
-
-### Email Verification
-
-#### Verify Email
-
-```http
-GET /api/auth/verify-email/:token
-```
-
-#### Resend Verification Email
-
-```http
-POST /api/auth/resend-verification
-```
-
-**Request Body:**
-
-```json
-{
-  "email": "user@example.com"
+  "confirmPassword": "NewSecurePass123!"
 }
 ```
 
@@ -264,25 +232,25 @@ POST /api/auth/resend-verification
 #### Google OAuth
 
 ```http
-GET /api/auth/google
+GET /api/v1/auth/google
 ```
 
 #### Google OAuth Callback
 
 ```http
-GET /api/auth/google/callback
+GET /api/v1/auth/google/callback
 ```
 
 #### GitHub OAuth
 
 ```http
-GET /api/auth/github
+GET /api/v1/auth/github
 ```
 
 #### GitHub OAuth Callback
 
 ```http
-GET /api/auth/github/callback
+GET /api/v1/auth/github/callback
 ```
 
 ### Profile Management
@@ -290,7 +258,7 @@ GET /api/auth/github/callback
 #### Get Profile
 
 ```http
-GET /api/profile
+GET /api/v1/profile
 ```
 
 **Headers:**
@@ -321,7 +289,7 @@ Authorization: Bearer your-jwt-token
 #### Update Profile
 
 ```http
-PUT /api/profile
+PATCH /api/v1/profile
 ```
 
 **Headers:**
@@ -343,7 +311,7 @@ Authorization: Bearer your-jwt-token
 #### Delete Profile
 
 ```http
-DELETE /api/profile
+DELETE /api/v1/profile
 ```
 
 **Headers:**
@@ -352,12 +320,55 @@ DELETE /api/profile
 Authorization: Bearer your-jwt-token
 ```
 
+#### Update Password
+
+```http
+PUT /api/v1/profile/update-password
+```
+
+**Headers:**
+
+```
+Authorization: Bearer your-jwt-token
+```
+
+**Request Body:**
+
+```json
+{
+  "password": "OldPassword123!",
+  "newPassword": "NewSecurePass123!"
+}
+```
+
+### Email Verification
+
+#### Verify Email
+
+```http
+GET /api/v1/porfile/verify-email/:token
+```
+
+#### Resend Verification Email
+
+```http
+POST /api/v1/profile/verify-email
+```
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
 ### Admin User Management
 
 #### Get All Users (Admin Only)
 
 ```http
-GET /api/admin/users?page=1&limit=10&search=john
+GET /api/v1/users?page=1&limit=10&sort=
 ```
 
 **Headers:**
@@ -394,13 +405,13 @@ Authorization: Bearer admin-jwt-token
 #### Get User by ID (Admin Only)
 
 ```http
-GET /api/admin/users/:userId
+GET /api/v1/users/:userId
 ```
 
 #### Update User (Admin Only)
 
 ```http
-PUT /api/admin/users/:userId
+PUT /api/v1/users/:userId
 ```
 
 **Request Body:**
@@ -416,7 +427,7 @@ PUT /api/admin/users/:userId
 #### Delete User (Admin Only)
 
 ```http
-DELETE /api/admin/users/:userId
+DELETE /api/v1/users/:userId
 ```
 
 ## Authentication Flow
@@ -447,7 +458,7 @@ The API uses standard HTTP status codes and returns errors in this format:
 
 ```json
 {
-  "status": "fial | error",
+  "status": "fail | error",
   "message": "Error description",
   "code": "error status code"
 }
