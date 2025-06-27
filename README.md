@@ -12,8 +12,10 @@ A complete authentication system with JWT tokens, OAuth integration, and user ma
 - **Admin Panel**: User management for administrators
 - **Security**: JWT refresh tokens, rate limiting, password hashing
 
+## 📚 API Documentation
+
 Comprehensive API documentation is available on Apidog:
-**[📖 View Live API Documentation](https://your-project.apidog.io)**
+**[📖 View Live API Documentation](https://2893d6fp6k.apidog.io)**
 
 ## Quick Start
 
