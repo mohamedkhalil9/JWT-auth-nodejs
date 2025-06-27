@@ -4,7 +4,7 @@ import { verifyToken } from "../utils/verifyToken.js";
 
 const authenticate = (req, res, next) => {
   // NOTE: bearer token
-  const token = req.headers.authorization || req.cookies.access;
+  const token = req.headers.authorization || req.signedCookies.access;
   if (!token) throw new AppError("token is required", 401);
 
   const decodedPayload = verifyToken(token, process.env.ACCESS_SECRET);

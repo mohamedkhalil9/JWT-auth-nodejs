@@ -14,14 +14,8 @@ const validate = (schema, source) => {
   };
 };
 
-export const validateBody = (schema) => {
-  return validate(schema, "body");
-};
+export const validateBody = (schema) => validate(schema, "body");
 
-export const validateParams = (schema) => {
-  return validate(schema, "params");
-};
+export const validateParams = (schema) => validate(schema, "params");
 
-export const validateQuery = (schema) => {
-  return validate(schema, "query");
-};
+export const validateQuery = (schema) => validate(schema, "query");

@@ -6,8 +6,11 @@ import {
   updateUser,
 } from "../controllers/userController.js";
 import { authenticate, authorize } from "../middlewares/authMiddleware.js";
-import { mongoId } from "../validation/schemas.js";
-import { validateParams } from "../middlewares/validatorMiddleware.js";
+import { mongoId, updateUserSchema } from "../validation/schemas.js";
+import {
+  validateBody,
+  validateParams,
+} from "../middlewares/validatorMiddleware.js";
 
 const router = express.Router();
 
@@ -19,6 +22,11 @@ router
   .route("/:id")
   .get(authorize("MANAGER", "ADMIN"), validateParams(mongoId), getUser)
   .delete(authorize("ADMIN"), validateParams(mongoId), deleteUser)
-  .patch(authorize("ADMIN"), validateParams(mongoId), updateUser);
+  .patch(
+    authorize("ADMIN"),
+    validateParams(mongoId),
+    validateBody(updateUserSchema),
+    updateUser,
+  );
 
 export default router;
