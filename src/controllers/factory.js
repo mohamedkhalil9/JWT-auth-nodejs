@@ -1,6 +1,6 @@
 import asyncHandler from "../middlewares/asyncHandler.js";
 import AppError from "../utils/AppError.js";
-import { apiFeatures } from "./features.js";
+import { apiFeatures } from "../utils/apiFeatures.js";
 
 export const getAll = (Model) => {
   return asyncHandler(async (req, res) => {
