@@ -1,9 +1,10 @@
 import User from "../models/userModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import AppError from "../utils/AppError.js";
-import bcrypt from "bcrypt";
 import { verifyToken } from "../utils/verifyToken.js";
+import jwt from "jsonwebtoken";
 import { sendResetEmail } from "../utils/sendEmail.js";
+import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 export const register = asyncHandler(async (req, res) => {
@@ -62,24 +63,33 @@ export const login = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookie("access", accessToken, { httpOnly: true, maxAge: 1000 * 60 })
+    .cookie("access", accessToken, {
+      httpOnly: true,
+      signed: true,
+      // secure: true,
+      sameSite: "strict",
+      maxAge: 1000 * 60,
+    })
     .cookie("refresh", refreshToken, {
       httpOnly: true,
+      signed: true,
+      // secure: true,
+      sameSite: "strict",
       // path: "/api/v1/auth/refresh-token",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     })
     .json({
       status: "success",
       data: {
-        newUser,
         accessToken,
         refreshToken,
+        user: newUser,
       },
     });
 });
 
 export const newToken = asyncHandler(async (req, res) => {
-  const token = req.cookies.refresh || req.headers.authorization;
+  const token = req.signedCookies.refresh || req.headers.authorization;
   if (!token) throw new AppError("token is required", 401);
 
   const decoded = verifyToken(token, process.env.REFRESH_SECRET);
@@ -92,23 +102,35 @@ export const newToken = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("access", accessToken, {
       httpOnly: true,
-      // path: "/api/v1/auth/refresh-token",
+      signed: true,
+      // secure: true,
+      sameSite: "strict",
       maxAge: 1000 * 60 * 5,
     })
-    .json({ status: "success" });
+    .json({ status: "success", accessToken });
 });
 
 export const logout = async (req, res) => {
-  const token = req.cookies.refresh || req.headers.authorization;
+  const token = req.signedCookies.refresh || req.headers.authorization;
   if (!token) res.sendStatus(204);
 
-  const decoded = verifyToken(token, process.env.REFRESH_SECRET);
-
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+  } catch (error) {
+    return new AppError("invalid token", 401);
+  }
   const user = await User.findByIdAndUpdate(decoded.id, { token: undefined });
   res
     .status(200)
-    .clearCookie("access", { httpOnly: true })
-    .clearCookie("refresh", { httpOnly: true })
+    .clearCookie("access", {
+      httpOnly: true,
+      signed: true,
+    })
+    .clearCookie("refresh", {
+      httpOnly: true,
+      signed: true,
+    })
     .json({ status: "success" });
 };
 
@@ -130,6 +152,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("reset", email, {
       httpOnly: true,
+      signed: true,
+      // secure: true,
+      sameSite: "strict",
       maxAge: 1000 * 60 * 5,
     })
     .json({
@@ -141,7 +166,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
 export const verifyOtp = asyncHandler(async (req, res) => {
   const { otp } = req.body;
-  const email = req.cookies.reset ?? req.body.email;
+  const email = req.signedCookies.reset ?? req.body.email;
 
   const user = await User.findOne({ email });
   if (!user || !user.otp) throw new AppError("user is not found", 404);
@@ -157,7 +182,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
-  const email = req.cookies.reset ?? req.body.email;
+  const email = req.signedCookies.reset ?? req.body.email;
   const { password } = req.body;
 
   const user = await User.findOne({ email });
