@@ -11,14 +11,10 @@ import xss from "xss-clean";
 import hpp from "hpp";
 import passport from "passport";
 import { notFound, globalErrorHandler } from "./middlewares/errorHandler.js";
-import appRouter from "./routes/index.js";
-
 import swaggerUi from "swagger-ui-express";
 import YAML from "js-yaml";
 import fs from "fs";
-
-const yamlFile = fs.readFileSync("src/utils/swagger.yaml", "utf8");
-const swaggerDocument = YAML.load(yamlFile);
+import appRouter from "./routes/index.js";
 
 // dev and prod ENVs
 // automation testing
@@ -48,7 +44,10 @@ app.use(hpp());
 
 app.use(passport.initialize());
 
+const yamlFile = fs.readFileSync("src/utils/swagger.yaml", "utf8");
+const swaggerDocument = YAML.load(yamlFile);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.use("/api/v1", appRouter);
 
 app.all("*", notFound);
